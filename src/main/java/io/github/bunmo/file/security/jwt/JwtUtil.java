@@ -1,24 +1,16 @@
 package io.github.bunmo.file.security.jwt;
 
-
-import io.github.bunmo.file.security.exception.AuthErrorCode;
-import io.github.bunmo.file.security.exception.AuthException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -62,26 +54,12 @@ public class JwtUtil {
             log.error("잘 못된 JWT 서명입니다");
         } catch (ExpiredJwtException e) {
             log.error("만료된 JWT 토큰입니다.");
-            throw new AuthException(AuthErrorCode.EXPIRED_JWT_TOKEN);
         } catch (UnsupportedJwtException e) {
             log.error("지원되지 않는 JWT 토큰입니다.");
         } catch (IllegalArgumentException e) {
             log.error("JWT 토큰이 잘못되었습니다.");
         }
         return false;
-    }
-
-    public Authentication getAuthentication(String token) {
-        Claims claims = parseClaims(token);
-
-        Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
-                        .filter(auth -> !auth.trim().isEmpty())
-                        .map(SimpleGrantedAuthority::new)
-                        .toList();
-        User principle = new User(claims.getSubject(), "", authorities);
-
-        return new UsernamePasswordAuthenticationToken(principle, token, authorities);
     }
 
     public String getSubject(String token) {

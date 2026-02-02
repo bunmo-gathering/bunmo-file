@@ -32,6 +32,6 @@ public class ApiResponse<T> {
     }
 
     public static ApiResponse<Void> error(ErrorCode errorCode) {
-        return new ApiResponse(errorCode.code(), errorCode.message(), null, null);
+        return new ApiResponse<>(errorCode.code(), errorCode.message(), null, null);
     }
 }
