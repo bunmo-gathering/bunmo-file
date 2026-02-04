@@ -34,4 +34,20 @@ public class ApiResponse<T> {
     public static ApiResponse<Void> error(ErrorCode errorCode) {
         return new ApiResponse<>(errorCode.code(), errorCode.message(), null, null);
     }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public List<FieldError> getErrors() {
+        return errors;
+    }
 }
