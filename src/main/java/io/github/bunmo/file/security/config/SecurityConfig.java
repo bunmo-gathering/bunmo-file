@@ -5,6 +5,7 @@ import io.github.bunmo.file.security.jwt.JwtAccessDeniedHandler;
 import io.github.bunmo.file.security.jwt.JwtAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -76,11 +77,13 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                HttpMethod.POST, "/api/v1/files/profile"
+                        ).authenticated()
+                        .requestMatchers(
                                 "/api-docs/**",
                                 "/swagger-ui/**",
-                                "/api/v1/files/profile/*"
+                                "/api/v1/files/**"
                         ).permitAll()
-                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

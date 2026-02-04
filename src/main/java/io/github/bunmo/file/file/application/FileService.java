@@ -1,5 +1,6 @@
 package io.github.bunmo.file.file.application;
 
+import io.github.bunmo.file.common.util.FilePathGenerator;
 import io.github.bunmo.file.file.exception.FileErrorCode;
 import io.github.bunmo.file.file.exception.FileException;
 import io.github.bunmo.file.file.infrastructure.storage.StorageClient;
@@ -39,10 +40,11 @@ public class FileService {
         Member member = memberRepository.findByUuid(uuid)
                 .orElseThrow(() -> new FileException(FileErrorCode.MEMBER_NOT_FOUND));
 
-        String objectName = buildProfileObjectName(uuid);
+        Long timestamp = System.currentTimeMillis();
+        String objectName = FilePathGenerator.generateProfileFilePath(uuid, timestamp);
 
         if (member.getProfileImageUrl() != null) {
-            storageClient.delete(objectName);
+            storageClient.delete(member.getProfileImageUrl());
         }
 
         try (InputStream inputStream = file.getInputStream()) {
@@ -53,14 +55,13 @@ public class FileService {
             throw new FileException(FileErrorCode.FILE_UPLOAD_FAILED);
         }
 
-        String profileUrl = "/api/v1/files/profile/" + uuid;
-        member.updateProfileImageUrl(profileUrl);
+        member.updateProfileImageUrl(objectName);
 
-        return ProfileUploadResponse.of(uuid);
+        return ProfileUploadResponse.of(objectName);
     }
 
     @Transactional(readOnly = true)
-    public ProfileImageData getProfileImage(String uuid) {
+    public ProfileImageData getProfileImage(String uuid, Long timestamp) {
         Member member = memberRepository.findByUuid(uuid)
                 .orElseThrow(() -> new FileException(FileErrorCode.MEMBER_NOT_FOUND));
 
@@ -68,26 +69,12 @@ public class FileService {
             throw new FileException(FileErrorCode.FILE_NOT_FOUND);
         }
 
-        String objectName = buildProfileObjectName(uuid);
+        String objectName = FilePathGenerator.generateProfileFilePath(uuid, timestamp);
         InputStream inputStream = storageClient.download(objectName);
         String etag = storageClient.getETag(objectName);
         String contentType = storageClient.getContentType(objectName);
 
         return new ProfileImageData(inputStream, contentType, etag);
-    }
-
-    @Transactional
-    public void deleteProfileImage(String uuid) {
-        Member member = memberRepository.findByUuid(uuid)
-                .orElseThrow(() -> new FileException(FileErrorCode.MEMBER_NOT_FOUND));
-
-        if (member.getProfileImageUrl() == null) {
-            throw new FileException(FileErrorCode.FILE_NOT_FOUND);
-        }
-
-        String objectName = buildProfileObjectName(uuid);
-        storageClient.delete(objectName);
-        member.updateProfileImageUrl(null);
     }
 
     private void validateFile(MultipartFile file) {
@@ -102,10 +89,6 @@ public class FileService {
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new FileException(FileErrorCode.FILE_SIZE_EXCEEDED);
         }
-    }
-
-    private String buildProfileObjectName(String uuid) {
-        return "profiles/" + uuid;
     }
 
     public record ProfileImageData(InputStream inputStream, String contentType, String etag) {}
